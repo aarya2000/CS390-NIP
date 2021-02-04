@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import to_categorical
 import random
+import math
 
 
 # Setting random seeds to keep everything deterministic.
@@ -38,16 +39,17 @@ class NeuralNetwork_2Layer():
 
     # Activation function.
     def __sigmoid(self, x):
-        pass   # TODO: implement
+        return 1 / (1 + math.exp(-x))  # TODO: implement
 
     # Activation prime function.
     def __sigmoidDerivative(self, x):
-        pass   # TODO: implement
+        sig = self.__sigmoid(x)   # TODO: implement
+        return sig * (1 - sig)
 
     # Batch generator for mini-batches. Not randomized.
     def __batchGenerator(self, l, n):
         for i in range(0, len(l), n):
-            yield l[i : i + n]
+            yield l[i: i + n]
 
     # Training with backpropagation.
     def train(self, xVals, yVals, epochs = 100000, minibatches = True, mbs = 100):
