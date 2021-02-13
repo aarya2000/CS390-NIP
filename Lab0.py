@@ -6,6 +6,7 @@ from tensorflow import keras
 from tensorflow.keras.utils import to_categorical
 import random
 import math
+from sklearn.metrics import f1_score
 
 
 # Setting random seeds to keep everything deterministic.
@@ -62,7 +63,6 @@ class NeuralNetwork_2Layer():
 
     # Training with backpropagation.
     def train(self, xVals, yVals, epochs=100000, minibatches=True, mbs=100):
-        print(epochs)
 
         mse_v = np.vectorize(self.mse)
         n = mbs
@@ -178,10 +178,6 @@ def preprocessData(raw):
     return ((train, yTrainP), (test, yTestP))
 
 
-# def custom_net():
-
-
-
 def trainModel(data):
     xTrain, yTrain = data
     if ALGORITHM == "guesser":
@@ -190,7 +186,7 @@ def trainModel(data):
         print("Building and training Custom_NN.")
         # print("Not yet implemented.")                   # TODO: Write code to build and train your custom neural net.
         nn = NeuralNetwork_2Layer(784, 10, 512)
-        nn.train(xTrain, yTrain, 10)
+        nn.train(xTrain, yTrain, 30)
         return nn
     elif ALGORITHM == "tf_net":
         print("Building and training TF_NN.")
@@ -225,6 +221,44 @@ def evalResults(data, preds):   # TODO: Add F1 score confusion matrix here.
     print("Classifier algorithm: %s" % ALGORITHM)
     print("Classifier accuracy: %f%%" % (accuracy * 100))
     print()
+    score = []
+    for i in range(10):
+        temp = [0] * 11
+        score.append(temp)
+    for i in range(preds.shape[0]):
+        act = yTest[i]
+        pred = preds[i]
+        num = 0
+        for val in act:
+            if val == 1:
+                break
+            num += 1
+        pred_num = 0
+        for val in pred:
+            if val == 1:
+                break
+            pred_num += 1
+        if num == pred_num:
+            score[num][num] += 1
+        else:
+            score[pred_num][num] += 1
+    for i in range(10):
+        temp = sum(score[i])
+        score[i][10] = temp
+    temp = []
+    for i in range(11):
+        add = 0
+        for j in range(10):
+            add += score[j][i]
+        temp.append(add)
+    score.append(temp)
+    score = np.array(score)
+    print("Confusion Matrix:")
+    print()
+    print(score)
+    print()
+    print("F1 Score Matrix:")
+    print(f1_score(yTest, preds, average=None))
 
 
 #=========================<Main>================================================
