@@ -23,13 +23,13 @@ NUM_CLASSES = 10
 IMAGE_SIZE = 784
 
 # Use these to set the algorithm to use.
-ALGORITHM = "guesser"
-#ALGORITHM = "custom_net"
+# ALGORITHM = "guesser"
+ALGORITHM = "custom_net"
 #ALGORITHM = "tf_net"
 
 
 class NeuralNetwork_2Layer():
-    def __init__(self, inputSize, outputSize, neuronsPerLayer, learningRate = 0.1):
+    def __init__(self, inputSize, outputSize, neuronsPerLayer, learningRate=0.1):
         self.inputSize = inputSize
         self.outputSize = outputSize
         self.neuronsPerLayer = neuronsPerLayer
@@ -37,14 +37,23 @@ class NeuralNetwork_2Layer():
         self.W1 = np.random.randn(self.inputSize, self.neuronsPerLayer)
         self.W2 = np.random.randn(self.neuronsPerLayer, self.outputSize)
 
+    def sigmoid(self, x):
+        return 1 / (1 + math.exp(-x))
+
     # Activation function.
     def __sigmoid(self, x):
-        return 1 / (1 + math.exp(-x))  # TODO: implement
+        sigmoid_v = np.vectorize(self.sigmoid)
+        return sigmoid_v(x)
+        # TODO: implement
 
     # Activation prime function.
     def __sigmoidDerivative(self, x):
         sig = self.__sigmoid(x)   # TODO: implement
         return sig * (1 - sig)
+
+    # Loss function
+    def mse(self, x, y):
+        return ((x - y) ** 2) / 2
 
     # Batch generator for mini-batches. Not randomized.
     def __batchGenerator(self, l, n):
@@ -52,8 +61,57 @@ class NeuralNetwork_2Layer():
             yield l[i: i + n]
 
     # Training with backpropagation.
-    def train(self, xVals, yVals, epochs = 100000, minibatches = True, mbs = 100):
-        pass               # TODO: Implement backprop. allow minibatches. mbs should specify the size of each minibatch.
+    def train(self, xVals, yVals, epochs=100000, minibatches=True, mbs=100):
+        print(epochs)
+
+        mse_v = np.vectorize(self.mse)
+        n = mbs
+
+        for epoch in range(epochs):
+            for i in range(0, len(xVals), n):
+                inp = xVals[i: i + n]
+                oup = yVals[i: i + n]
+                L1_out, L2_out = self.__forward(inp)
+                y_hat = L2_out.copy()
+                # loss = mse_v(oup, y_hat)
+                loss_prime = y_hat - oup
+
+                list2 = []
+
+                for j in range(len(y_hat)):
+                    temp1 = y_hat[j]
+                    temp2 = loss_prime[j]
+                    mult = np.ones(len(temp1)) - temp1
+
+                    temp = temp1 * mult
+                    temp = temp * temp2
+                    list2.append(temp)
+
+                adj2 = np.array(list2)
+                upd2 = (np.dot(np.transpose(L1_out), adj2)) / n
+
+                h_error = np.dot(adj2, np.transpose(self.W2))
+
+                list1 = []
+
+                for j in range(len(L1_out)):
+                    temp1 = L1_out[j]
+                    temp2 = h_error[j]
+                    mult = np.ones(len(temp1)) - temp1
+
+                    temp = temp1 * mult
+                    temp = temp * temp2
+                    list1.append(temp)
+
+                adj1 = np.array(list1)
+                upd1 = (np.dot(np.transpose(inp), adj1)) / n
+
+                self.W1 -= upd1
+                self.W2 -= upd2
+
+
+        pass
+        # TODO: Implement backprop. allow minibatches. mbs should specify the size of each minibatch.
 
     # Forward pass.
     def __forward(self, input):
@@ -64,7 +122,9 @@ class NeuralNetwork_2Layer():
     # Predict.
     def predict(self, xVals):
         _, layer2 = self.__forward(xVals)
-        return layer2
+        b = np.zeros_like(layer2)
+        b[np.arange(len(layer2)), layer2.argmax(1)] = 1
+        return b
 
 
 # Classifier that just guesses the class label.
@@ -80,6 +140,10 @@ def guesserClassifier(xTest):
 #=========================<Pipeline Functions>==================================
 
 
+def range_reduce(x):
+    return (x * 1.0) / 255
+
+
 def getRawData():
     mnist = tf.keras.datasets.mnist
     (xTrain, yTrain), (xTest, yTest) = mnist.load_data()
@@ -92,13 +156,30 @@ def getRawData():
 
 def preprocessData(raw):
     ((xTrain, yTrain), (xTest, yTest)) = raw            # TODO: Add range reduction here (0-255 ==> 0.0-1.0).
+    range_v = np.vectorize(range_reduce)
+    train = []
+    test = []
+    for x in xTrain:
+        x = x.flatten()
+        x = range_v(x)
+        train.append(x)
+    train = np.array(train)
+    for x in xTest:
+        x = x.flatten()
+        x = range_v(x)
+        test.append(x)
+    test = np.array(test)
     yTrainP = to_categorical(yTrain, NUM_CLASSES)
     yTestP = to_categorical(yTest, NUM_CLASSES)
     print("New shape of xTrain dataset: %s." % str(xTrain.shape))
     print("New shape of xTest dataset: %s." % str(xTest.shape))
     print("New shape of yTrain dataset: %s." % str(yTrainP.shape))
     print("New shape of yTest dataset: %s." % str(yTestP.shape))
-    return ((xTrain, yTrainP), (xTest, yTestP))
+    return ((train, yTrainP), (test, yTestP))
+
+
+# def custom_net():
+
 
 
 def trainModel(data):
@@ -107,8 +188,10 @@ def trainModel(data):
         return None   # Guesser has no model, as it is just guessing.
     elif ALGORITHM == "custom_net":
         print("Building and training Custom_NN.")
-        print("Not yet implemented.")                   # TODO: Write code to build and train your custon neural net.
-        return None
+        # print("Not yet implemented.")                   # TODO: Write code to build and train your custom neural net.
+        nn = NeuralNetwork_2Layer(784, 10, 512)
+        nn.train(xTrain, yTrain, 10)
+        return nn
     elif ALGORITHM == "tf_net":
         print("Building and training TF_NN.")
         print("Not yet implemented.")                   # TODO: Write code to build and train your keras neural net.
@@ -122,8 +205,9 @@ def runModel(data, model):
         return guesserClassifier(data)
     elif ALGORITHM == "custom_net":
         print("Testing Custom_NN.")
-        print("Not yet implemented.")                   # TODO: Write code to run your custom neural net.
-        return None
+        # print("Not yet implemented.")                   # TODO: Write code to run your custom neural net.
+        pred = model.predict(data)
+        return pred
     elif ALGORITHM == "tf_net":
         print("Testing TF_NN.")
         print("Not yet implemented.")                   # TODO: Write code to run your keras neural net.
