@@ -7,16 +7,17 @@ from tensorflow.keras.utils import to_categorical
 import random
 import math
 from sklearn.metrics import f1_score
+import pandas as pd
 
 
 # Setting random seeds to keep everything deterministic.
 random.seed(1618)
 np.random.seed(1618)
-#tf.set_random_seed(1618)   # Uncomment for TF1.
+# tf.set_random_seed(1618)   # Uncomment for TF1.
 tf.random.set_seed(1618)
 
 # Disable some troublesome logging.
-#tf.logging.set_verbosity(tf.logging.ERROR)   # Uncomment for TF1.
+# tf.logging.set_verbosity(tf.logging.ERROR)   # Uncomment for TF1.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Information on dataset.
@@ -26,7 +27,7 @@ IMAGE_SIZE = 784
 # Use these to set the algorithm to use.
 # ALGORITHM = "guesser"
 ALGORITHM = "custom_net"
-#ALGORITHM = "tf_net"
+# ALGORITHM = "tf_net"
 
 
 class NeuralNetwork_2Layer():
@@ -106,8 +107,8 @@ class NeuralNetwork_2Layer():
                 adj1 = np.array(list1)
                 upd1 = (np.dot(np.transpose(inp), adj1)) / n
 
-                self.W1 -= upd1
-                self.W2 -= upd2
+                self.W1 -= self.lr * upd1
+                self.W2 -= self.lr * upd2
 
 
         pass
@@ -185,13 +186,18 @@ def trainModel(data):
     elif ALGORITHM == "custom_net":
         print("Building and training Custom_NN.")
         # print("Not yet implemented.")                   # TODO: Write code to build and train your custom neural net.
-        nn = NeuralNetwork_2Layer(784, 10, 512)
-        nn.train(xTrain, yTrain, 30)
+        nn = NeuralNetwork_2Layer(784, 10, 50, 2.0)
+        nn.train(xTrain, yTrain, 20)
         return nn
     elif ALGORITHM == "tf_net":
         print("Building and training TF_NN.")
-        print("Not yet implemented.")                   # TODO: Write code to build and train your keras neural net.
-        return None
+        # print("Not yet implemented.")                   # TODO: Write code to build and train your keras neural net.
+        model = tf.keras.models.Sequential([tf.keras.layers.Flatten(),
+                                            tf.keras.layers.Dense(512, activation=tf.nn.sigmoid),
+                                            tf.keras.layers.Dense(10, activation=tf.nn.sigmoid)])
+        model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+        model.fit(xTrain, yTrain, epochs=10)
+        return model
     else:
         raise ValueError("Algorithm not recognized.")
 
@@ -206,8 +212,11 @@ def runModel(data, model):
         return pred
     elif ALGORITHM == "tf_net":
         print("Testing TF_NN.")
-        print("Not yet implemented.")                   # TODO: Write code to run your keras neural net.
-        return None
+        # print("Not yet implemented.")                   # TODO: Write code to run your keras neural net.
+        preds = model.predict(data)
+        b = np.zeros_like(preds)
+        b[np.arange(len(preds)), preds.argmax(1)] = 1
+        return b
     else:
         raise ValueError("Algorithm not recognized.")
 
