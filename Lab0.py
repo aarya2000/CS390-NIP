@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 import tensorflow as tf
@@ -7,8 +6,6 @@ from tensorflow.keras.utils import to_categorical
 import random
 import math
 from sklearn.metrics import f1_score
-import pandas as pd
-
 
 # Setting random seeds to keep everything deterministic.
 random.seed(1618)
@@ -27,17 +24,24 @@ IMAGE_SIZE = 784
 # Use these to set the algorithm to use.
 # ALGORITHM = "guesser"
 ALGORITHM = "custom_net"
+
+
 # ALGORITHM = "tf_net"
 
 
 class NeuralNetwork_2Layer():
-    def __init__(self, inputSize, outputSize, neuronsPerLayer, learningRate=0.1):
+    def __init__(self, inputSize, outputSize, neuronsPerLayer, learningRate, layers):
         self.inputSize = inputSize
         self.outputSize = outputSize
         self.neuronsPerLayer = neuronsPerLayer
         self.lr = learningRate
-        self.W1 = np.random.randn(self.inputSize, self.neuronsPerLayer)
-        self.W2 = np.random.randn(self.neuronsPerLayer, self.outputSize)
+        self.weights = [np.random.randn(self.inputSize, self.neuronsPerLayer)]
+        for i in range(layers - 2):
+            self.weights.append(np.random.randn(self.neuronsPerLayer, self.neuronsPerLayer))
+        self.weights.append(np.random.randn(self.neuronsPerLayer, self.outputSize))
+        # self.W1 = np.random.randn(self.inputSize, self.neuronsPerLayer)
+        # self.W2 = np.random.randn(self.neuronsPerLayer, self.outputSize)
+        self.layers = layers
 
     def sigmoid(self, x):
         return 1 / (1 + math.exp(-x))
@@ -50,7 +54,7 @@ class NeuralNetwork_2Layer():
 
     # Activation prime function.
     def __sigmoidDerivative(self, x):
-        sig = self.__sigmoid(x)   # TODO: implement
+        sig = self.__sigmoid(x)  # TODO: implement
         return sig * (1 - sig)
 
     # Loss function
@@ -65,64 +69,95 @@ class NeuralNetwork_2Layer():
     # Training with backpropagation.
     def train(self, xVals, yVals, epochs=100000, minibatches=True, mbs=100):
 
-        mse_v = np.vectorize(self.mse)
         n = mbs
 
         for epoch in range(epochs):
             for i in range(0, len(xVals), n):
                 inp = xVals[i: i + n]
                 oup = yVals[i: i + n]
-                L1_out, L2_out = self.__forward(inp)
-                y_hat = L2_out.copy()
-                # loss = mse_v(oup, y_hat)
-                loss_prime = y_hat - oup
+                layers = self.__forward(inp)
 
-                list2 = []
+                o_out = layers[len(layers) - 1]
+                o_error = o_out - oup
 
-                for j in range(len(y_hat)):
-                    temp1 = y_hat[j]
-                    temp2 = loss_prime[j]
+                adjL = []
+
+                for j in range(len(o_out)):
+                    temp1 = o_out[j]
+                    temp2 = o_error[j]
                     mult = np.ones(len(temp1)) - temp1
 
                     temp = temp1 * mult
                     temp = temp * temp2
-                    list2.append(temp)
+                    adjL.append(temp)
 
-                adj2 = np.array(list2)
-                upd2 = (np.dot(np.transpose(L1_out), adj2)) / n
+                o_delta = np.array(adjL)
+                upd = (np.dot(np.transpose(layers[len(layers) - 2]), o_delta)) / n
+                updates = [upd]
 
-                h_error = np.dot(adj2, np.transpose(self.W2))
+                k = len(layers) - 1
 
-                list1 = []
+                while k > 1:
 
-                for j in range(len(L1_out)):
-                    temp1 = L1_out[j]
+                    h_error = np.dot(o_delta, np.transpose(self.weights[k]))
+                    h_out = layers[k - 1]
+
+                    adjL = []
+
+                    for j in range(len(h_out)):
+                        temp1 = h_out[j]
+                        temp2 = h_error[j]
+                        mult = np.ones(len(temp1)) - temp1
+
+                        temp = temp1 * mult
+                        temp = temp * temp2
+                        adjL.append(temp)
+
+                    o_delta = np.array(adjL)
+                    upd = (np.dot(np.transpose(layers[k - 2]), o_delta)) / n
+                    updates.append(upd)
+                    k -= 1
+
+                h_error = np.dot(o_delta, np.transpose(self.weights[k]))
+                h_out = layers[k - 1]
+
+                adjL = []
+
+                for j in range(len(h_out)):
+                    temp1 = h_out[j]
                     temp2 = h_error[j]
                     mult = np.ones(len(temp1)) - temp1
 
                     temp = temp1 * mult
                     temp = temp * temp2
-                    list1.append(temp)
+                    adjL.append(temp)
 
-                adj1 = np.array(list1)
-                upd1 = (np.dot(np.transpose(inp), adj1)) / n
+                o_delta = np.array(adjL)
+                upd = (np.dot(np.transpose(inp), o_delta)) / n
+                updates.append(upd)
 
-                self.W1 -= self.lr * upd1
-                self.W2 -= self.lr * upd2
+                updates.reverse()
 
+                for j in range(len(self.weights)):
+                    self.weights[j] -= self.lr * updates[j]
 
         pass
         # TODO: Implement backprop. allow minibatches. mbs should specify the size of each minibatch.
 
     # Forward pass.
     def __forward(self, input):
-        layer1 = self.__sigmoid(np.dot(input, self.W1))
-        layer2 = self.__sigmoid(np.dot(layer1, self.W2))
-        return layer1, layer2
+        layers = []
+        temp = input
+        for i in range(self.layers):
+            layer = self.__sigmoid(np.dot(temp, self.weights[i]))
+            layers.append(layer)
+            temp = layer
+        return layers
 
     # Predict.
     def predict(self, xVals):
-        _, layer2 = self.__forward(xVals)
+        layers = self.__forward(xVals)
+        layer2 = layers[len(layers) - 1]
         b = np.zeros_like(layer2)
         b[np.arange(len(layer2)), layer2.argmax(1)] = 1
         return b
@@ -138,7 +173,7 @@ def guesserClassifier(xTest):
     return np.array(ans)
 
 
-#=========================<Pipeline Functions>==================================
+# =========================<Pipeline Functions>==================================
 
 
 def range_reduce(x):
@@ -156,7 +191,7 @@ def getRawData():
 
 
 def preprocessData(raw):
-    ((xTrain, yTrain), (xTest, yTest)) = raw            # TODO: Add range reduction here (0-255 ==> 0.0-1.0).
+    ((xTrain, yTrain), (xTest, yTest)) = raw  # TODO: Add range reduction here (0-255 ==> 0.0-1.0).
     range_v = np.vectorize(range_reduce)
     train = []
     test = []
@@ -182,12 +217,12 @@ def preprocessData(raw):
 def trainModel(data):
     xTrain, yTrain = data
     if ALGORITHM == "guesser":
-        return None   # Guesser has no model, as it is just guessing.
+        return None  # Guesser has no model, as it is just guessing.
     elif ALGORITHM == "custom_net":
         print("Building and training Custom_NN.")
         # print("Not yet implemented.")                   # TODO: Write code to build and train your custom neural net.
-        nn = NeuralNetwork_2Layer(784, 10, 50, 2.0)
-        nn.train(xTrain, yTrain, 20)
+        nn = NeuralNetwork_2Layer(784, 10, 50, 2.0, 2)
+        nn.train(xTrain, yTrain, 1)
         return nn
     elif ALGORITHM == "tf_net":
         print("Building and training TF_NN.")
@@ -196,7 +231,7 @@ def trainModel(data):
                                             tf.keras.layers.Dense(512, activation=tf.nn.sigmoid),
                                             tf.keras.layers.Dense(10, activation=tf.nn.sigmoid)])
         model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
-        model.fit(xTrain, yTrain, epochs=10)
+        model.fit(xTrain, yTrain, epochs=15)
         return model
     else:
         raise ValueError("Algorithm not recognized.")
@@ -221,7 +256,7 @@ def runModel(data, model):
         raise ValueError("Algorithm not recognized.")
 
 
-def evalResults(data, preds):   # TODO: Add F1 score confusion matrix here.
+def evalResults(data, preds):  # TODO: Add F1 score confusion matrix here.
     xTest, yTest = data
     acc = 0
     for i in range(preds.shape[0]):
@@ -270,7 +305,7 @@ def evalResults(data, preds):   # TODO: Add F1 score confusion matrix here.
     print(f1_score(yTest, preds, average=None))
 
 
-#=========================<Main>================================================
+# =========================<Main>================================================
 
 
 def main():
