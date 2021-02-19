@@ -5,7 +5,9 @@ from tensorflow import keras
 from tensorflow.keras.utils import to_categorical
 import random
 import math
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, confusion_matrix
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
 
 # Setting random seeds to keep everything deterministic.
 random.seed(1618)
@@ -24,13 +26,11 @@ IMAGE_SIZE = 784
 # Use these to set the algorithm to use.
 # ALGORITHM = "guesser"
 ALGORITHM = "custom_net"
-
-
 # ALGORITHM = "tf_net"
 
 
 class NeuralNetwork_2Layer():
-    def __init__(self, inputSize, outputSize, neuronsPerLayer, learningRate, layers):
+    def __init__(self, inputSize, outputSize, neuronsPerLayer, learningRate, layers=2, act=0):
         self.inputSize = inputSize
         self.outputSize = outputSize
         self.neuronsPerLayer = neuronsPerLayer
@@ -39,12 +39,14 @@ class NeuralNetwork_2Layer():
         for i in range(layers - 2):
             self.weights.append(np.random.randn(self.neuronsPerLayer, self.neuronsPerLayer))
         self.weights.append(np.random.randn(self.neuronsPerLayer, self.outputSize))
-        # self.W1 = np.random.randn(self.inputSize, self.neuronsPerLayer)
-        # self.W2 = np.random.randn(self.neuronsPerLayer, self.outputSize)
         self.layers = layers
+        self.activation = act
 
     def sigmoid(self, x):
         return 1 / (1 + math.exp(-x))
+
+    def relu(self, x):
+        return max(0, x)
 
     # Activation function.
     def __sigmoid(self, x):
@@ -52,10 +54,18 @@ class NeuralNetwork_2Layer():
         return sigmoid_v(x)
         # TODO: implement
 
+    def __relu(self, x):
+        relu_v = np.vectorize(self.relu)
+        return relu_v(x)
+
     # Activation prime function.
-    def __sigmoidDerivative(self, x):
-        sig = self.__sigmoid(x)  # TODO: implement
-        return sig * (1 - sig)
+    def __sigmoidDerivative(self, x):  # TODO: implement
+        return x * (1 - x)
+
+    def __reluDerivative(self, x):
+        if x > 0:
+            return 1
+        return 0
 
     # Loss function
     def mse(self, x, y):
@@ -70,6 +80,12 @@ class NeuralNetwork_2Layer():
     def train(self, xVals, yVals, epochs=100000, minibatches=True, mbs=100):
 
         n = mbs
+        if not minibatches:
+            n = 1
+        if self.activation == 0:
+            act = np.vectorize(self.__sigmoidDerivative)
+        else:
+            act = np.vectorize(self.__reluDerivative)
 
         for epoch in range(epochs):
             for i in range(0, len(xVals), n):
@@ -85,10 +101,7 @@ class NeuralNetwork_2Layer():
                 for j in range(len(o_out)):
                     temp1 = o_out[j]
                     temp2 = o_error[j]
-                    mult = np.ones(len(temp1)) - temp1
-
-                    temp = temp1 * mult
-                    temp = temp * temp2
+                    temp = act(temp1) * temp2
                     adjL.append(temp)
 
                 o_delta = np.array(adjL)
@@ -107,10 +120,7 @@ class NeuralNetwork_2Layer():
                     for j in range(len(h_out)):
                         temp1 = h_out[j]
                         temp2 = h_error[j]
-                        mult = np.ones(len(temp1)) - temp1
-
-                        temp = temp1 * mult
-                        temp = temp * temp2
+                        temp = act(temp1) * temp2
                         adjL.append(temp)
 
                     o_delta = np.array(adjL)
@@ -126,10 +136,7 @@ class NeuralNetwork_2Layer():
                 for j in range(len(h_out)):
                     temp1 = h_out[j]
                     temp2 = h_error[j]
-                    mult = np.ones(len(temp1)) - temp1
-
-                    temp = temp1 * mult
-                    temp = temp * temp2
+                    temp = act(temp1) * temp2
                     adjL.append(temp)
 
                 o_delta = np.array(adjL)
@@ -149,7 +156,10 @@ class NeuralNetwork_2Layer():
         layers = []
         temp = input
         for i in range(self.layers):
-            layer = self.__sigmoid(np.dot(temp, self.weights[i]))
+            if self.activation == 0:
+                layer = self.__sigmoid(np.dot(temp, self.weights[i]))
+            else:
+                layer = self.__relu(np.dot(temp, self.weights[i]))
             layers.append(layer)
             temp = layer
         return layers
@@ -157,9 +167,9 @@ class NeuralNetwork_2Layer():
     # Predict.
     def predict(self, xVals):
         layers = self.__forward(xVals)
-        layer2 = layers[len(layers) - 1]
-        b = np.zeros_like(layer2)
-        b[np.arange(len(layer2)), layer2.argmax(1)] = 1
+        layer = layers[len(layers) - 1]
+        b = np.zeros_like(layer)
+        b[np.arange(len(layer)), layer.argmax(1)] = 1
         return b
 
 
@@ -222,7 +232,7 @@ def trainModel(data):
         print("Building and training Custom_NN.")
         # print("Not yet implemented.")                   # TODO: Write code to build and train your custom neural net.
         nn = NeuralNetwork_2Layer(784, 10, 50, 2.0, 2)
-        nn.train(xTrain, yTrain, 1)
+        nn.train(xTrain, yTrain, 20)
         return nn
     elif ALGORITHM == "tf_net":
         print("Building and training TF_NN.")
@@ -265,41 +275,8 @@ def evalResults(data, preds):  # TODO: Add F1 score confusion matrix here.
     print("Classifier algorithm: %s" % ALGORITHM)
     print("Classifier accuracy: %f%%" % (accuracy * 100))
     print()
-    score = []
-    for i in range(10):
-        temp = [0] * 11
-        score.append(temp)
-    for i in range(preds.shape[0]):
-        act = yTest[i]
-        pred = preds[i]
-        num = 0
-        for val in act:
-            if val == 1:
-                break
-            num += 1
-        pred_num = 0
-        for val in pred:
-            if val == 1:
-                break
-            pred_num += 1
-        if num == pred_num:
-            score[num][num] += 1
-        else:
-            score[pred_num][num] += 1
-    for i in range(10):
-        temp = sum(score[i])
-        score[i][10] = temp
-    temp = []
-    for i in range(11):
-        add = 0
-        for j in range(10):
-            add += score[j][i]
-        temp.append(add)
-    score.append(temp)
-    score = np.array(score)
     print("Confusion Matrix:")
-    print()
-    print(score)
+    print(confusion_matrix(yTest.argmax(axis=1), preds.argmax(axis=1)))
     print()
     print("F1 Score Matrix:")
     print(f1_score(yTest, preds, average=None))
@@ -314,6 +291,22 @@ def main():
     model = trainModel(data[0])
     preds = runModel(data[1][0], model)
     evalResults(data[1], preds)
+
+    # Iris Dataset
+    # TODO: Uncomment below code to test Custom NN on Iris dataset
+
+    # iris = datasets.load_iris()
+    # X = iris.data
+    # Y = iris.target
+    # xTrain, xTest, yTrain, yTest = train_test_split(X, Y, test_size=0.2)
+    # yTrain = to_categorical(yTrain, 3)
+    # yTest = to_categorical(yTest, 3)
+    #
+    # nn = NeuralNetwork_2Layer(4, 3, 150, 1.0, 2)
+    # nn.train(xTrain, yTrain, 20, True, 10)
+    # preds = nn.predict(xTest)
+    # data = (xTest, yTest)
+    # evalResults(data, preds)
 
 
 if __name__ == '__main__':
