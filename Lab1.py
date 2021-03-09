@@ -11,6 +11,7 @@ from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.models import save_model
 from tensorflow.keras.models import load_model
 
@@ -26,8 +27,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # ALGORITHM = "tf_net"
 ALGORITHM = "tf_conv"
 
-DATASET = "mnist_d"
-#DATASET = "mnist_f"
+# DATASET = "mnist_d"
+DATASET = "mnist_f"
 #DATASET = "cifar_10"
 #DATASET = "cifar_100_f"
 #DATASET = "cifar_100_c"
@@ -101,6 +102,23 @@ def buildTFConvNet(x, y, dataset, load = True, eps = 10, dropout = True, dropRat
         model.add(Dense(NUM_CLASSES, activation='softmax'))
         model.compile(optimizer='adam', loss=lossType)
         model.fit(x, y, epochs=eps)
+    elif dataset == 'mnist_f':
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Dense(NUM_CLASSES, activation='softmax'))
+        model.compile(optimizer='adam', loss=lossType)
+        model.fit(x, y, epochs=eps)
+
     return model
 
 #=========================<Pipeline Functions>==================================
