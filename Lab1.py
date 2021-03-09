@@ -73,8 +73,15 @@ def buildTFNeuralNet(x, y, eps = 6):
     return model
 
 
-def buildTFConvNet(x, y, dataset, eps = 10, dropout = True, dropRate = 0.2):
+def buildTFConvNet(x, y, dataset, load = True, eps = 10, dropout = True, dropRate = 0.2):
     # pass        # TODO: Implement a CNN here. dropout option is required.
+    if load:
+        parent_dir = os.getcwd()
+        curr = DATASET + '/model'
+        final_path = os.path.join(parent_dir, curr)
+        model = load_model(final_path)
+        return model
+
     model = Sequential()
     inShape = (IH, IW, IZ)
     lossType = keras.losses.categorical_crossentropy
