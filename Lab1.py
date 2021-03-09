@@ -5,7 +5,14 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import to_categorical
 import random
-
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.models import save_model
+from tensorflow.keras.models import load_model
 
 random.seed(1618)
 np.random.seed(1618)
@@ -15,9 +22,9 @@ tf.random.set_seed(1618)
 #tf.logging.set_verbosity(tf.logging.ERROR)   # Uncomment for TF1.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-ALGORITHM = "guesser"
-#ALGORITHM = "tf_net"
-#ALGORITHM = "tf_conv"
+# ALGORITHM = "guesser"
+# ALGORITHM = "tf_net"
+ALGORITHM = "tf_conv"
 
 DATASET = "mnist_d"
 #DATASET = "mnist_f"
@@ -57,13 +64,37 @@ def guesserClassifier(xTest):
 
 
 def buildTFNeuralNet(x, y, eps = 6):
-    pass        #TODO: Implement a standard ANN here.
-    return None
+    # pass        # TODO: Implement a standard ANN here.
+    model = keras.models.Sequential([keras.layers.Flatten(),
+                                        keras.layers.Dense(512, activation=tf.nn.sigmoid),
+                                        keras.layers.Dense(10, activation=tf.nn.sigmoid)])
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+    model.fit(x, y, epochs=15)
+    return model
 
 
-def buildTFConvNet(x, y, eps = 10, dropout = True, dropRate = 0.2):
-    pass        #TODO: Implement a CNN here. dropout option is required.
-    return None
+def buildTFConvNet(x, y, dataset, eps = 10, dropout = True, dropRate = 0.2):
+    # pass        # TODO: Implement a CNN here. dropout option is required.
+    model = Sequential()
+    inShape = (IH, IW, IZ)
+    lossType = keras.losses.categorical_crossentropy
+
+    if dataset == 'mnist_d':
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Dense(NUM_CLASSES, activation='softmax'))
+        model.compile(optimizer='adam', loss=lossType)
+        model.fit(x, y, epochs=eps)
+    return model
 
 #=========================<Pipeline Functions>==================================
 
@@ -99,6 +130,8 @@ def preprocessData(raw):
     else:
         xTrainP = xTrain.reshape((xTrain.shape[0], IH, IW, IZ))
         xTestP = xTest.reshape((xTest.shape[0], IH, IW, IZ))
+    # xTrainP /= 255.0
+    # xTestP /= 255.0
     yTrainP = to_categorical(yTrain, NUM_CLASSES)
     yTestP = to_categorical(yTest, NUM_CLASSES)
     print("New shape of xTrain dataset: %s." % str(xTrainP.shape))
@@ -118,10 +151,9 @@ def trainModel(data):
         return buildTFNeuralNet(xTrain, yTrain)
     elif ALGORITHM == "tf_conv":
         print("Building and training TF_CNN.")
-        return buildTFConvNet(xTrain, yTrain)
+        return buildTFConvNet(xTrain, yTrain, DATASET)
     else:
         raise ValueError("Algorithm not recognized.")
-
 
 
 def runModel(data, model):
@@ -147,7 +179,6 @@ def runModel(data, model):
         raise ValueError("Algorithm not recognized.")
 
 
-
 def evalResults(data, preds):
     xTest, yTest = data
     acc = 0
@@ -157,7 +188,25 @@ def evalResults(data, preds):
     print("Classifier algorithm: %s" % ALGORITHM)
     print("Classifier accuracy: %f%%" % (accuracy * 100))
     print()
+    return accuracy
 
+
+def saveModel(model, acc, dir):
+    acc_file = os.path.join(dir, 'acc')
+    mod_file = os.path.join(dir, 'model')
+    if not os.path.exists(acc_file):
+        acc_f = open(acc_file, 'w')
+        acc_f.write(str(acc))
+        acc_f.close()
+        save_model(model, mod_file)
+    else:
+        acc_f = open(acc_file, 'r+')
+        old_acc = acc_f.read()
+        temp = float(old_acc)
+        if temp < acc:
+            acc_f.write(str(acc))
+            acc_f.close()
+            save_model(model, mod_file, overwrite=True)
 
 
 #=========================<Main>================================================
@@ -167,9 +216,14 @@ def main():
     data = preprocessData(raw)
     model = trainModel(data[0])
     preds = runModel(data[1][0], model)
-    evalResults(data[1], preds)
+    acc = evalResults(data[1], preds)
 
-
+    parent_dir = os.getcwd()
+    curr_dir = DATASET
+    final_dir = os.path.join(parent_dir, curr_dir)
+    if not os.path.exists(final_dir):
+        os.makedirs(final_dir)
+    saveModel(model, acc, final_dir)
 
 if __name__ == '__main__':
     main()
