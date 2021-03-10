@@ -23,21 +23,23 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="3673" />
+          <entry key="py" value="3915" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="3673" />
+          <entry key="Python" value="3915" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
+          <entry key="acc" value="1" />
           <entry key="py" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
+          <entry key="PLAIN_TEXT" value="1" />
           <entry key="Python" value="1" />
         </counts>
       </usages-collector>
@@ -64,11 +66,11 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Lab1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="410">
-              <caret line="178" column="53" selection-start-line="178" selection-start-column="53" selection-end-line="178" selection-end-column="53" />
+            <state relative-caret-position="5190">
+              <caret line="346" column="50" lean-forward="true" selection-start-line="346" selection-start-column="50" selection-end-line="346" selection-end-column="50" />
               <folding>
                 <element signature="e#1#10#0" expanded="true" />
-                <marker date="1615305188993" expanded="true" signature="7372:7865" ph="..." />
+                <marker date="1615324439708" expanded="true" signature="11519:12067" ph="..." />
               </folding>
             </state>
           </provider>
@@ -88,7 +90,7 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="22" />
+    <option name="x" value="21" />
     <option name="y" value="23" />
     <option name="width" value="1400" />
     <option name="height" value="799" />
@@ -195,7 +197,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="22" y="23" width="1400" height="799" extended-state="0" />
+    <frame x="21" y="23" width="1400" height="799" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.28645065" />
@@ -237,13 +239,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/cifar_100_c/acc">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/Lab1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="410">
-          <caret line="178" column="53" selection-start-line="178" selection-start-column="53" selection-end-line="178" selection-end-column="53" />
+        <state relative-caret-position="5190">
+          <caret line="346" column="50" lean-forward="true" selection-start-line="346" selection-start-column="50" selection-end-line="346" selection-end-column="50" />
           <folding>
             <element signature="e#1#10#0" expanded="true" />
-            <marker date="1615305188993" expanded="true" signature="7372:7865" ph="..." />
+            <marker date="1615324439708" expanded="true" signature="11519:12067" ph="..." />
           </folding>
         </state>
       </provider>

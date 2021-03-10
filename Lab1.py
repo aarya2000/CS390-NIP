@@ -14,6 +14,7 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.models import save_model
 from tensorflow.keras.models import load_model
+from tensorflow.keras.layers.experimental.preprocessing import RandomCrop
 
 random.seed(1618)
 np.random.seed(1618)
@@ -28,10 +29,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 ALGORITHM = "tf_conv"
 
 # DATASET = "mnist_d"
-DATASET = "mnist_f"
-#DATASET = "cifar_10"
-#DATASET = "cifar_100_f"
-#DATASET = "cifar_100_c"
+# DATASET = "mnist_f"
+# DATASET = "cifar_10"
+DATASET = "cifar_100_f"
+# DATASET = "cifar_100_c"
 
 if DATASET == "mnist_d":
     NUM_CLASSES = 10
@@ -46,12 +47,26 @@ elif DATASET == "mnist_f":
     IZ = 1
     IS = 784
 elif DATASET == "cifar_10":
-    pass                                 # TODO: Add this case.
+    # pass                                 # TODO: Add this case.
+    NUM_CLASSES = 10
+    IH = 32
+    IW = 32
+    IZ = 3
+    IS = 3072
 elif DATASET == "cifar_100_f":
-    pass                                 # TODO: Add this case.
+    # pass                                 # TODO: Add this case.
+    NUM_CLASSES = 100
+    IH = 32
+    IW = 32
+    IZ = 3
+    IS = 3072
 elif DATASET == "cifar_100_c":
-    pass                                 # TODO: Add this case.
-
+    # pass                                 # TODO: Add this case.
+    NUM_CLASSES = 20
+    IH = 32
+    IW = 32
+    IZ = 3
+    IS = 3072
 
 #=========================<Classifier Functions>================================
 
@@ -74,7 +89,7 @@ def buildTFNeuralNet(x, y, eps = 6):
     return model
 
 
-def buildTFConvNet(x, y, dataset, load = True, eps = 10, dropout = True, dropRate = 0.2):
+def buildTFConvNet(x, y, dataset, load = True, random_crop = True, eps = 10, dropout = True, dropRate = 0.2):
     # pass        # TODO: Implement a CNN here. dropout option is required.
     if load:
         parent_dir = os.getcwd()
@@ -118,10 +133,88 @@ def buildTFConvNet(x, y, dataset, load = True, eps = 10, dropout = True, dropRat
         model.add(Dense(NUM_CLASSES, activation='softmax'))
         model.compile(optimizer='adam', loss=lossType)
         model.fit(x, y, epochs=eps)
+    elif dataset == 'cifar_10':
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        model.add(BatchNormalization())
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Dense(NUM_CLASSES, activation='softmax'))
+        model.compile(optimizer='adam', loss=lossType)
+        model.fit(x, y, epochs=eps)
+    elif dataset == 'cifar_100_c':
+        # if random_crop:
+        #     model.add(RandomCrop(x[0].shape[0] - 4, x[0].shape[1] - 4))
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        model.add(BatchNormalization())
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Dense(NUM_CLASSES, activation='softmax'))
+        model.compile(optimizer='adam', loss=lossType)
+        model.fit(x, y, epochs=eps)
+    else:
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        model.add(BatchNormalization())
+        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+        model.add(BatchNormalization())
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        if dropout:
+            model.add(Dropout(dropRate))
+        model.add(Dense(NUM_CLASSES, activation='softmax'))
+        model.compile(optimizer='adam', loss=lossType)
+        model.fit(x, y, epochs=eps)
 
     return model
 
 #=========================<Pipeline Functions>==================================
+
 
 def getRawData():
     if DATASET == "mnist_d":
@@ -131,11 +224,17 @@ def getRawData():
         mnist = tf.keras.datasets.fashion_mnist
         (xTrain, yTrain), (xTest, yTest) = mnist.load_data()
     elif DATASET == "cifar_10":
-        pass      # TODO: Add this case.
+        # pass      # TODO: Add this case.
+        cifar = tf.keras.datasets.cifar10
+        (xTrain, yTrain), (xTest, yTest) = cifar.load_data()
     elif DATASET == "cifar_100_f":
-        pass      # TODO: Add this case.
+        # pass      # TODO: Add this case.
+        cifar = tf.keras.datasets.cifar100
+        (xTrain, yTrain), (xTest, yTest) = cifar.load_data(label_mode='fine')
     elif DATASET == "cifar_100_c":
-        pass      # TODO: Add this case.
+        # pass      # TODO: Add this case.
+        cifar = tf.keras.datasets.cifar100
+        (xTrain, yTrain), (xTest, yTest) = cifar.load_data(label_mode='coarse')
     else:
         raise ValueError("Dataset not recognized.")
     print("Dataset: %s" % DATASET)
@@ -144,7 +243,6 @@ def getRawData():
     print("Shape of xTest dataset: %s." % str(xTest.shape))
     print("Shape of yTest dataset: %s." % str(yTest.shape))
     return ((xTrain, yTrain), (xTest, yTest))
-
 
 
 def preprocessData(raw):
@@ -166,7 +264,6 @@ def preprocessData(raw):
     return ((xTrainP, yTrainP), (xTestP, yTestP))
 
 
-
 def trainModel(data):
     xTrain, yTrain = data
     if ALGORITHM == "guesser":
@@ -176,7 +273,7 @@ def trainModel(data):
         return buildTFNeuralNet(xTrain, yTrain)
     elif ALGORITHM == "tf_conv":
         print("Building and training TF_CNN.")
-        return buildTFConvNet(xTrain, yTrain, DATASET)
+        return buildTFConvNet(xTrain, yTrain, DATASET, False)
     else:
         raise ValueError("Algorithm not recognized.")
 
@@ -229,7 +326,9 @@ def saveModel(model, acc, dir):
         old_acc = acc_f.read()
         temp = float(old_acc)
         if temp < acc:
+            acc_f.seek(0)
             acc_f.write(str(acc))
+            acc_f.truncate()
             acc_f.close()
             save_model(model, mod_file, overwrite=True)
 
@@ -249,6 +348,7 @@ def main():
     if not os.path.exists(final_dir):
         os.makedirs(final_dir)
     saveModel(model, acc, final_dir)
+
 
 if __name__ == '__main__':
     main()
