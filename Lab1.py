@@ -24,14 +24,14 @@ tf.random.set_seed(1618)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # ALGORITHM = "guesser"
-# ALGORITHM = "tf_net"
-ALGORITHM = "tf_conv"
+ALGORITHM = "tf_net"
+# ALGORITHM = "tf_conv"
 
 # DATASET = "mnist_d"
 # DATASET = "mnist_f"
 # DATASET = "cifar_10"
-# DATASET = "cifar_100_f"
-DATASET = "cifar_100_c"
+DATASET = "cifar_100_f"
+# DATASET = "cifar_100_c"
 
 if DATASET == "mnist_d":
     NUM_CLASSES = 10
@@ -82,13 +82,13 @@ def buildTFNeuralNet(x, y, eps = 6):
     # pass        # TODO: Implement a standard ANN here.
     model = keras.models.Sequential([keras.layers.Flatten(),
                                         keras.layers.Dense(512, activation=tf.nn.sigmoid),
-                                        keras.layers.Dense(10, activation=tf.nn.sigmoid)])
+                                        keras.layers.Dense(NUM_CLASSES, activation=tf.nn.sigmoid)])
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
-    model.fit(x, y, epochs=15)
+    model.fit(x, y, epochs=10)
     return model
 
 
-def buildTFConvNet(x, y, dataset, load = True, random_crop = True, eps = 10, dropout = True, dropRate = 0.2):
+def buildTFConvNet(x, y, dataset, load = True, eps = 10, dropout = True, dropRate = 0.2):
     # pass        # TODO: Implement a CNN here. dropout option is required.
     if load:
         parent_dir = os.getcwd()
@@ -258,12 +258,20 @@ def main():
     preds = runModel(data[1][0], model)
     acc = evalResults(data[1], preds)
 
-    parent_dir = os.getcwd()
-    curr_dir = DATASET
-    final_dir = os.path.join(parent_dir, curr_dir)
-    if not os.path.exists(final_dir):
-        os.makedirs(final_dir)
-    saveModel(model, acc, final_dir)
+    if ALGORITHM == 'tf_conv':
+        parent_dir = os.getcwd()
+        curr_dir = DATASET
+        final_dir = os.path.join(parent_dir, curr_dir)
+        if not os.path.exists(final_dir):
+            os.makedirs(final_dir)
+        saveModel(model, acc, final_dir)
+    else:
+        parent_dir = os.getcwd()
+        curr_dir = DATASET + '_ann'
+        final_dir = os.path.join(parent_dir, curr_dir)
+        if not os.path.exists(final_dir):
+            os.makedirs(final_dir)
+        saveModel(model, acc, final_dir)
 
 
 if __name__ == '__main__':
