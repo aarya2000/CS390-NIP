@@ -14,7 +14,6 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.models import save_model
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers.experimental.preprocessing import RandomCrop
 
 random.seed(1618)
 np.random.seed(1618)
@@ -31,8 +30,8 @@ ALGORITHM = "tf_conv"
 # DATASET = "mnist_d"
 # DATASET = "mnist_f"
 # DATASET = "cifar_10"
-DATASET = "cifar_100_f"
-# DATASET = "cifar_100_c"
+# DATASET = "cifar_100_f"
+DATASET = "cifar_100_c"
 
 if DATASET == "mnist_d":
     NUM_CLASSES = 10
@@ -102,114 +101,31 @@ def buildTFConvNet(x, y, dataset, load = True, random_crop = True, eps = 10, dro
     inShape = (IH, IW, IZ)
     lossType = keras.losses.categorical_crossentropy
 
-    if dataset == 'mnist_d':
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Dense(NUM_CLASSES, activation='softmax'))
-        model.compile(optimizer='adam', loss=lossType)
-        model.fit(x, y, epochs=eps)
-    elif dataset == 'mnist_f':
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Dense(NUM_CLASSES, activation='softmax'))
-        model.compile(optimizer='adam', loss=lossType)
-        model.fit(x, y, epochs=eps)
-    elif dataset == 'cifar_10':
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        model.add(BatchNormalization())
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Dense(NUM_CLASSES, activation='softmax'))
-        model.compile(optimizer='adam', loss=lossType)
-        model.fit(x, y, epochs=eps)
-    elif dataset == 'cifar_100_c':
-        # if random_crop:
-        #     model.add(RandomCrop(x[0].shape[0] - 4, x[0].shape[1] - 4))
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        model.add(BatchNormalization())
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Dense(NUM_CLASSES, activation='softmax'))
-        model.compile(optimizer='adam', loss=lossType)
-        model.fit(x, y, epochs=eps)
-    else:
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        model.add(BatchNormalization())
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
-        model.add(BatchNormalization())
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        if dropout:
-            model.add(Dropout(dropRate))
-        model.add(Dense(NUM_CLASSES, activation='softmax'))
-        model.compile(optimizer='adam', loss=lossType)
-        model.fit(x, y, epochs=eps)
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+    model.add(BatchNormalization())
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=inShape))
+    model.add(BatchNormalization())
+    if dropout:
+        model.add(Dropout(dropRate))
+    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    if dropout:
+        model.add(Dropout(dropRate))
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+    model.add(BatchNormalization())
+    if dropout:
+        model.add(Dropout(dropRate))
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+    model.add(BatchNormalization())
+    if dropout:
+        model.add(Dropout(dropRate))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    if dropout:
+        model.add(Dropout(dropRate))
+    model.add(Dense(NUM_CLASSES, activation='softmax'))
+    model.compile(optimizer='adam', loss=lossType)
+    model.fit(x, y, epochs=eps)
 
     return model
 
