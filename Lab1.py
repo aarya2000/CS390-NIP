@@ -27,10 +27,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 ALGORITHM = "tf_net"
 # ALGORITHM = "tf_conv"
 
-# DATASET = "mnist_d"
+DATASET = "mnist_d"
 # DATASET = "mnist_f"
 # DATASET = "cifar_10"
-DATASET = "cifar_100_f"
+# DATASET = "cifar_100_f"
 # DATASET = "cifar_100_c"
 
 if DATASET == "mnist_d":
@@ -68,6 +68,7 @@ elif DATASET == "cifar_100_c":
     IS = 3072
 
 #=========================<Classifier Functions>================================
+
 
 def guesserClassifier(xTest):
     ans = []
@@ -169,8 +170,6 @@ def preprocessData(raw):
     else:
         xTrainP = xTrain.reshape((xTrain.shape[0], IH, IW, IZ))
         xTestP = xTest.reshape((xTest.shape[0], IH, IW, IZ))
-    # xTrainP /= 255.0
-    # xTestP /= 255.0
     yTrainP = to_categorical(yTrain, NUM_CLASSES)
     yTestP = to_categorical(yTest, NUM_CLASSES)
     print("New shape of xTrain dataset: %s." % str(xTrainP.shape))
