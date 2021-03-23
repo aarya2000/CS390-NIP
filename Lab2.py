@@ -10,7 +10,9 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.backend import gradients
 import warnings
 import imageio
+from tensorflow.python.framework.ops import disable_eager_execution
 
+disable_eager_execution()
 random.seed(1618)
 np.random.seed(1618)
 # tf.set_random_seed(1618)   # Uncomment for TF1.
@@ -19,8 +21,11 @@ tf.random.set_seed(1618)
 # tf.logging.set_verbosity(tf.logging.ERROR)   # Uncomment for TF1.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-CONTENT_IMG_PATH = ""           # TODO: Add this.
-STYLE_IMG_PATH = ""             # TODO: Add this.
+cwd = os.getcwd()
+CONTENT_IMG = "Hogwarts"
+STYLE_IMG = "StarryNight"
+CONTENT_IMG_PATH = os.path.join(cwd, "Hogwarts.jpg")          # TODO: Add this.
+STYLE_IMG_PATH = os.path.join(cwd, "StarryNight.jpg")            # TODO: Add this.
 
 
 CONTENT_IMG_H = 500
@@ -33,7 +38,7 @@ CONTENT_WEIGHT = 0.1    # Alpha weight.
 STYLE_WEIGHT = 1.0      # Beta weight.
 TOTAL_WEIGHT = 1.0
 
-TRANSFER_ROUNDS = 3
+TRANSFER_ROUNDS = 50
 
 
 # =============================<Helper Fuctions>=================================
@@ -87,15 +92,12 @@ def getRawData():
     tImg = cImg.copy()
     sImg = load_img(STYLE_IMG_PATH, target_size=(STYLE_IMG_H, STYLE_IMG_W))
     print("      Images have been loaded.")
-    return ((cImg, CONTENT_IMG_H, CONTENT_IMG_W), (sImg, STYLE_IMG_H, STYLE_IMG_W), (tImg, CONTENT_IMG_H, CONTENT_IMG_W))
+    return (cImg, CONTENT_IMG_H, CONTENT_IMG_W), (sImg, STYLE_IMG_H, STYLE_IMG_W), (tImg, CONTENT_IMG_H, CONTENT_IMG_W)
 
 
 def preprocessData(raw):
     img, ih, iw = raw
     img = img_to_array(img)
-    # with warnings.catch_warnings():
-    #     warnings.simplefilter("ignore")
-    #     img = imresize(img, (ih, iw, 3))
     img = img.astype("float64")
     img = np.expand_dims(img, axis=0)
     img = vgg19.preprocess_input(img)
@@ -135,7 +137,7 @@ def styleTransfer(cData, sData, tData):
     sLoss = 0.0
     print("   Calculating style loss.")
     for layerName in styleLayerNames:
-        styleLayer = model[layerName]
+        styleLayer = outputDict[layerName]
         styleOutput = styleLayer[1, :, :, :]
         genOutput = styleLayer[2, :, :, :]
         sLoss += styleLoss(styleOutput, genOutput)   # TODO: implement.
@@ -173,16 +175,17 @@ def styleTransfer(cData, sData, tData):
 
     tData = tData.flatten()
     print("   Beginning transfer.")
-    for i in range(TRANSFER_ROUNDS):
+    for i in range(1, TRANSFER_ROUNDS + 1):
         print("   Step %d." % i)
 
         # TODO: perform gradient descent using fmin_l_bfgs_b.
-        tData, tLoss, info = fmin_l_bfgs_b(evaluator.loss, tData, fprime=evaluator.grads, maxfun=20)
+        tData, tLoss, info = fmin_l_bfgs_b(evaluator.loss, tData, fprime=evaluator.grads, maxfun=20, maxiter=1300)
         print("      Loss: %f." % tLoss)
 
         img = tData.copy().reshape((CONTENT_IMG_H, CONTENT_IMG_W, 3))
         img = deprocessImage(img)
-        saveFile = "transfer_iteration_%d" % i   # TODO: Implement.
+        temp = CONTENT_IMG + "_" + STYLE_IMG + "_%d.png"
+        saveFile = temp % i   # TODO: Implement.
         imageio.imwrite(saveFile, img)   # Uncomment when everything is working right.
         print("      Image saved to \"%s\"." % saveFile)
 
@@ -197,6 +200,7 @@ def main():
     cData = preprocessData(raw[0])   # Content image.
     sData = preprocessData(raw[1])   # Style image.
     tData = preprocessData(raw[2])   # Transfer image.
+    print("Preprocessed Raw Data")
     styleTransfer(cData, sData, tData)
     print("Done. Goodbye.")
 
