@@ -22,9 +22,9 @@ tf.random.set_seed(1618)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 cwd = os.getcwd()
-CONTENT_IMG = "Hogwarts"
+CONTENT_IMG = "group"
 STYLE_IMG = "StarryNight"
-CONTENT_IMG_PATH = os.path.join(cwd, "Hogwarts.jpg")          # TODO: Add this.
+CONTENT_IMG_PATH = os.path.join(cwd, "group.png")          # TODO: Add this.
 STYLE_IMG_PATH = os.path.join(cwd, "StarryNight.jpg")            # TODO: Add this.
 
 
@@ -38,7 +38,7 @@ CONTENT_WEIGHT = 0.1    # Alpha weight.
 STYLE_WEIGHT = 1.0      # Beta weight.
 TOTAL_WEIGHT = 1.0
 
-TRANSFER_ROUNDS = 50
+TRANSFER_ROUNDS = 1
 
 
 # =============================<Helper Fuctions>=================================
